@@ -3,6 +3,9 @@ from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST, require_GET
 from django.views.generic import TemplateView
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.exceptions import AuthenticationFailed
+from rest_framework.request import Request
 
 from .forms import WebPushForm, SubscriptionForm
 
@@ -15,6 +18,10 @@ def save_info(request):
         post_data = json.loads(request.body.decode('utf-8'))
     except ValueError:
         return HttpResponse(status=400)
+    try:
+        user = TokenAuthentication().authenticate(Request(request))
+    except AuthenticationFailed:
+        return HttpResponse(status=401)
 
     # Process the subscription data to mach with the model
     subscription_data = process_subscription_data(post_data)
@@ -30,12 +37,12 @@ def save_info(request):
         group_name = web_push_data.pop("group")
 
         # We at least need the user or group to subscribe for a notification
-        if request.user.is_authenticated or group_name:
+        if user and user.is_authenticated or group_name:
             # Save the subscription info with subscription data
             # as the subscription data is a dictionary and its valid
             subscription = subscription_form.get_or_save()
             web_push_form.save_or_delete(
-                subscription=subscription, user=request.user,
+                subscription=subscription, user=user,
                 status_type=status_type, group_name=group_name)
 
             # If subscribe is made, means object is created. So return 201
