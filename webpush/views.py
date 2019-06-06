@@ -20,7 +20,7 @@ def save_info(request):
         return HttpResponse(status=400)
     try:
         user = TokenAuthentication().authenticate(Request(request))[0]
-    except AuthenticationFailed, IndexError:
+    except (AuthenticationFailed, IndexError):
         return HttpResponse(status=401)
 
     # Process the subscription data to mach with the model
