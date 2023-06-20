@@ -22,6 +22,9 @@ class WebPushForm(forms.Form):
 
         data["subscription"] = subscription
 
+        queryset = PushInformation.objects.filter(**data)
+        if queryset.count() > 1:
+            queryset.delete()
         push_info, created = PushInformation.objects.get_or_create(**data)
 
         # If unsubscribe is called, that means need to delete the browser
@@ -38,5 +41,8 @@ class SubscriptionForm(forms.ModelForm):
         fields = ('endpoint', 'auth', 'p256dh', 'browser')
 
     def get_or_save(self):
+        queryset = SubscriptionInfo.objects.filter(**self.cleaned_data)
+        if queryset.count() > 1:
+            queryset.delete()
         subscription, created = SubscriptionInfo.objects.get_or_create(**self.cleaned_data)
         return subscription
